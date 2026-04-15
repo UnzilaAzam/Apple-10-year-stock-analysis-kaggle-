@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Stock Analysis Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #3a383d 100%);
+            color: #5a5959;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgb(225, 225, 225);
+            border-radius: 5px;
+            padding: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #0b0b0e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 1.3em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: #1d1e23;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #434242 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        button:hover {
+            transform: scale(1.02);
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            border-left: 4px solid #1c1c1e;
+            display: none;
+        }
+        .result.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-label {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+        .result-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #02125a;
+        }
+        .positive {
+            color: #035817;
+        }
+        .negative {
+            color: #5a020b;
+        }
+        .chart-container {
+            grid-column: 1 / -1;
+            background: rgb(255, 255, 255);
+            border-radius: 15px;
+            padding: 30px;
+        }
+        .load-data-btn {
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #434242 100%);
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .info-box {
+            background: #fafafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1e1f20;
+        }
+        .info-box strong {
+            color: #373838;
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Apple Stock Analysis Dashboard</h1>
+        </header>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2 class="card-title">Price Prediction (Regression)</h2>
+                <button class="load-data-btn" onclick="loadLatestData('regression')">Load Latest Data</button>
+                
+                <div class="form-group">
+                    <label>Open Price ($)</label>
+                    <input type="number" id="reg-open" step="0.01" placeholder="e.g., 150.25">
+                </div>
+                <div class="form-group">
+                    <label>High Price ($)</label>
+                    <input type="number" id="reg-high" step="0.01" placeholder="e.g., 152.50">
+                </div>
+                <div class="form-group">
+                    <label>Low Price ($)</label>
+                    <input type="number" id="reg-low" step="0.01" placeholder="e.g., 149.80">
+                </div>
+                <div class="form-group">
+                    <label>Close Price ($)</label>
+                    <input type="number" id="reg-close" step="0.01" placeholder="e.g., 151.75">
+                </div>
+                <div class="form-group">
+                    <label>Volume</label>
+                    <input type="number" id="reg-volume" placeholder="e.g., 50000000">
+                </div>
+                
+                <button onclick="predictPrice()">Predict Next-Day Price</button>
+                
+                <div id="price-result" class="result">
+                    <div class="result-label">Predicted Next-Day Price:</div>
+                    <div class="result-value" id="predicted-price">$0.00</div>
+                    <div style="margin-top: 10px;">
+                        <div class="result-label">Expected Change:</div>
+                        <div id="price-change">$0.00 (0.00%)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Movement Prediction (Classification)</h2>
+                <button class="load-data-btn" onclick="loadLatestData('classification')">Load Latest Data</button>
+                
+                <div class="form-group">
+                    <label>Daily Return</label>
+                    <input type="number" id="clf-daily-return" step="0.0001" placeholder="e.g., 0.0123">
+                </div>
+                <div class="form-group">
+                    <label>5-Day MA ($)</label>
+                    <input type="number" id="clf-ma5" step="0.01" placeholder="e.g., 150.00">
+                </div>
+                <div class="form-group">
+                    <label>10-Day MA ($)</label>
+                    <input type="number" id="clf-ma10" step="0.01" placeholder="e.g., 149.50">
+                </div>
+                <div class="form-group">
+                    <label>20-Day MA ($)</label>
+                    <input type="number" id="clf-ma20" step="0.01" placeholder="e.g., 148.75">
+                </div>
+                <div class="form-group">
+                    <label>Volatility</label>
+                    <input type="number" id="clf-volatility" step="0.0001" placeholder="e.g., 0.0150">
+                </div>
+                <div class="form-group">
+                    <label>High-Low Spread ($)</label>
+                    <input type="number" id="clf-spread" step="0.01" placeholder="e.g., 2.70">
+                </div>
+                <div class="form-group">
+                    <label>Volume Change</label>
+                    <input type="number" id="clf-volume-change" step="0.0001" placeholder="e.g., 0.0500">
+                </div>
+                <div class="form-group">
+                    <label>RSI</label>
+                    <input type="number" id="clf-rsi" step="0.01" placeholder="e.g., 55.00">
+                </div>
+                
+                <button onclick="predictMovement()">Predict Movement Direction</button>
+                
+                <div id="movement-result" class="result">
+                    <div class="result-label">Predicted Movement:</div>
+                    <div class="result-value" id="movement-prediction">UP/DOWN</div>
+                    <div style="margin-top: 10px;">
+                        <div class="result-label">Confidence:</div>
+                        <div id="movement-confidence">0%</div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <div class="grid-2">
+                            <div>
+                                <div class="result-label">Probability UP:</div>
+                                <div id="prob-up" class="positive">0%</div>
+                            </div>
+                            <div>
+                                <div class="result-label">Probability DOWN:</div>
+                                <div id="prob-down" class="negative">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Market Regime (Clustering)</h2>
+                
+                <div class="info-box">
+                    <strong>Info:</strong> Enter monthly aggregated metrics to identify market regime
+                </div>
+                
+                <div class="form-group">
+                    <label>Mean Return (monthly)</label>
+                    <input type="number" id="clust-mean-return" step="0.0001" placeholder="e.g., 0.0200">
+                </div>
+                <div class="form-group">
+                    <label>Volatility (monthly)</label>
+                    <input type="number" id="clust-volatility" step="0.0001" placeholder="e.g., 0.0150">
+                </div>
+                <div class="form-group">
+                    <label>Average Volume</label>
+                    <input type="number" id="clust-avg-volume" placeholder="e.g., 75000000">
+                </div>
+                <div class="form-group">
+                    <label>Max Drawdown</label>
+                    <input type="number" id="clust-drawdown" step="0.0001" placeholder="e.g., -0.0300">
+                </div>
+                
+                <button onclick="getCluster()">Identify Market Regime</button>
+                
+                <div id="cluster-result" class="result">
+                    <div class="result-label">Market Regime:</div>
+                    <div class="result-value" id="cluster-prediction">Cluster X</div>
+                    <div style="margin-top: 10px;">
+                        <div class="result-label">Description:</div>
+                        <div id="cluster-description">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadLatestData(type) {
+            try {
+                console.log('Loading latest data for:', type);
+                const response = await fetch('/get_latest_data');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Received data:', data);
+                
+                if (data.success) {
+                    if (type === 'regression') {
+                        document.getElementById('reg-open').value = data.open;
+                        document.getElementById('reg-high').value = data.high;
+                        document.getElementById('reg-low').value = data.low;
+                        document.getElementById('reg-close').value = data.close;
+                        document.getElementById('reg-volume').value = data.volume;
+                        alert('Latest data loaded successfully!');
+                    } else if (type === 'classification') {
+                        document.getElementById('clf-daily-return').value = data.daily_return;
+                        document.getElementById('clf-ma5').value = data.ma_5;
+                        document.getElementById('clf-ma10').value = data.ma_10;
+                        document.getElementById('clf-ma20').value = data.ma_20;
+                        document.getElementById('clf-volatility').value = data.volatility;
+                        document.getElementById('clf-spread').value = data.high_low_spread;
+                        document.getElementById('clf-volume-change').value = data.volume_change;
+                        document.getElementById('clf-rsi').value = data.rsi;
+                        alert('Latest data loaded successfully!');
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Error loading data: ' + error.message + '\n\nMake sure the Flask server is running!');
+            }
+        }
+
+        async function predictPrice() {
+            const data = {
+                open: document.getElementById('reg-open').value,
+                high: document.getElementById('reg-high').value,
+                low: document.getElementById('reg-low').value,
+                close: document.getElementById('reg-close').value,
+                volume: document.getElementById('reg-volume').value
+            };
+
+            console.log('Sending price prediction request:', data);
+
+            if (!data.open || !data.high || !data.low || !data.close || !data.volume) {
+                alert('Please fill in all fields!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/predict_price', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Received result:', result);
+                
+                if (result.success) {
+                    document.getElementById('predicted-price').textContent = '$' + result.predicted_price;
+
+                    const changeClass = result.price_change >= 0 ? 'positive' : 'negative';
+                    const changeSymbol = result.price_change >= 0 ? '+' : '';
+                    document.getElementById('price-change').innerHTML = 
+                        `<span class="${changeClass}">${changeSymbol}${result.price_change} (${changeSymbol}${result.percent_change}%)</span>`;
+                    document.getElementById('price-result').classList.add('show');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error making prediction: ' + error.message + '\n\nMake sure the Flask server is running!');
+            }
+        }
+
+        async function predictMovement() {
+            const data = {
+                daily_return: document.getElementById('clf-daily-return').value,
+                ma_5: document.getElementById('clf-ma5').value,
+                ma_10: document.getElementById('clf-ma10').value,
+                ma_20: document.getElementById('clf-ma20').value,
+                volatility: document.getElementById('clf-volatility').value,
+                high_low_spread: document.getElementById('clf-spread').value,
+                volume_change: document.getElementById('clf-volume-change').value,
+                rsi: document.getElementById('clf-rsi').value
+            };
+
+            console.log('Sending movement prediction request:', data);
+
+            if (!data.daily_return || !data.ma_5 || !data.ma_10 || !data.ma_20 || !data.volatility || !data.high_low_spread || !data.volume_change || !data.rsi) {
+                alert('Please fill in all fields!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/predict_movement', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Received result:', result);
+                
+                if (result.success) {
+                    const movementClass = result.movement === 'UP' ? 'positive' : 'negative';
+                    document.getElementById('movement-prediction').textContent = result.movement;
+                    document.getElementById('movement-prediction').className = 'result-value ' + movementClass;
+                    document.getElementById('movement-confidence').textContent = result.confidence + '%';
+                    document.getElementById('prob-up').textContent = result.probability_up + '%';
+                    document.getElementById('prob-down').textContent = result.probability_down + '%';
+                    document.getElementById('movement-result').classList.add('show');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error making prediction: ' + error.message + '\n\nMake sure the Flask server is running!');
+            }
+        }
+
+        async function getCluster() {
+            const data = {
+                mean_return: document.getElementById('clust-mean-return').value,
+                volatility: document.getElementById('clust-volatility').value,
+                avg_volume: document.getElementById('clust-avg-volume').value,
+                max_drawdown: document.getElementById('clust-drawdown').value
+            };
+
+            console.log('Sending cluster request:', data);
+
+            if (!data.mean_return || !data.volatility || !data.avg_volume || !data.max_drawdown) {
+                alert('Please fill in all fields!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/get_cluster', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Received result:', result);
+                
+                if (result.success) {
+                    document.getElementById('cluster-prediction').textContent = 'Cluster ' + result.cluster;
+                    document.getElementById('cluster-description').textContent = result.description;
+                    document.getElementById('cluster-result').classList.add('show');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error getting cluster: ' + error.message + '\n\nMake sure the Flask server is running!');
+            }
+        }
+
+        window.onload = function() {
+            console.log('Page loaded. Testing server connection...');
+            fetch('/get_latest_data')
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Successfully connected to Flask server!');
+                    } else {
+                        console.error('Flask server responded with error:', response.status);
+                    }
+                })
+                .catch(error => {
+                    console.error('Cannot connect to Flask server:', error);
+                    console.error('Make sure to run: python app.py');
+                });
+        };
+    </script>
+</body>
+</html>
